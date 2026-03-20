@@ -1,0 +1,28 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env/
+
+# Temporary uploads (VERY IMPORTANT for your project)
+temp_uploads/
+
+# Images (avoid pushing test data)
+*.jpg
+*.jpeg
+*.png
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log

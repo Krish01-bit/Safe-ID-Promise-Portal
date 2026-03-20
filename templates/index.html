@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIP (Safe ID Promise) — AI Identity Verification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f2faf4;
+    --surface2: #ffffff;
+    --border: rgba(34,139,68,0.18);
+    --green: #1a9e3f;
+    --green-dark: #147a30;
+    --green-light: #e8f7ed;
+    --green-mid: #c6ecd2;
+    --grad: linear-gradient(135deg, #1a9e3f, #2dc653);
+    --grad2: linear-gradient(135deg, #2dc653, #78d97e);
+    --text: #111827;
+    --muted: #5a6676;
+    --glow: 0 0 40px rgba(26,158,63,0.18);
+    --glow2: 0 0 80px rgba(26,158,63,0.12);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 16px; line-height: 1.7; overflow-x: hidden; }
+  h1,h2,h3,h4 { font-family: 'Syne', sans-serif; line-height: 1.15; }
+  a { text-decoration: none; color: inherit; }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--green); border-radius: 99px; }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 5%;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(26,158,63,0.12);
+    box-shadow: 0 1px 20px rgba(0,0,0,0.06);
+    transition: padding .3s, box-shadow .3s;
+  }
+  nav.scrolled { padding: .7rem 5%; box-shadow: 0 2px 24px rgba(0,0,0,0.09); }
+
+  .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; color: var(--green); letter-spacing: -0.02em; }
+  .logo span { color: var(--text); }
+
+  .nav-links { display: flex; gap: 2.2rem; list-style: none; }
+  .nav-links a { font-size: .88rem; font-weight: 500; color: #444c5a; transition: color .25s; letter-spacing: .03em; position: relative; padding-bottom: 4px; text-decoration: none; }
+  .nav-links a::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--green); border-radius: 2px; transition: width .3s cubic-bezier(.4,0,.2,1); }
+  .nav-links a:hover { color: var(--green); }
+  .nav-links a:hover::after { width: 100%; }
+  .nav-links a.active { color: var(--green); font-weight: 600; }
+  .nav-links a.active::after { width: 100%; }
+
+  .nav-cta { padding: .52rem 1.3rem; border-radius: 50px; background: var(--grad); font-family: 'Syne', sans-serif; font-size: .85rem; font-weight: 700; color: #fff; box-shadow: 0 4px 14px rgba(26,158,63,.35); transition: box-shadow .3s, transform .2s; }
+  .nav-cta:hover { box-shadow: 0 6px 22px rgba(26,158,63,.55); transform: translateY(-1px); }
+
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+  .hamburger span { width: 24px; height: 2px; background: var(--text); border-radius: 2px; transition: .3s; }
+
+  #home { min-height: 100vh; display: flex; align-items: center; padding: 9rem 5% 5rem; position: relative; overflow: hidden; background: linear-gradient(160deg, #ffffff 0%, #f0faf3 60%, #e4f7ea 100%); }
+
+  .hero-bg-orb { position: absolute; border-radius: 50%; filter: blur(90px); pointer-events: none; }
+  .orb1 { width: 600px; height: 600px; background: rgba(26,158,63,.1); top: -10%; left: -10%; }
+  .orb2 { width: 500px; height: 500px; background: rgba(45,198,83,.08); top: 20%; right: -8%; }
+  .orb3 { width: 300px; height: 300px; background: rgba(120,217,126,.1); bottom: 5%; left: 30%; }
+
+  .hero-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; max-width: 1200px; margin: 0 auto; width: 100%; position: relative; z-index: 1; }
+
+  .hero-badge { display: inline-flex; align-items: center; gap: .5rem; padding: .35rem .9rem; border-radius: 50px; border: 1px solid rgba(26,158,63,.25); background: rgba(26,158,63,.08); font-size: .75rem; font-weight: 500; color: var(--green-dark); margin-bottom: 1.4rem; animation: fadeInUp .8s both; }
+  .hero-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+
+  @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.5; transform:scale(1.3); } }
+
+  .hero-title { font-size: clamp(2.4rem, 5vw, 3.8rem); font-weight: 800; letter-spacing: -.03em; color: var(--text); margin-bottom: 1.2rem; animation: fadeInUp .8s .1s both; }
+  .hero-title .grad-word { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .hero-sub { font-size: 1.05rem; color: var(--muted); font-weight: 300; max-width: 480px; margin-bottom: 2.2rem; animation: fadeInUp .8s .2s both; }
+
+  .hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; animation: fadeInUp .8s .3s both; }
+
+  .btn-primary { display: inline-flex; align-items: center; gap: .5rem; padding: .78rem 1.8rem; border-radius: 50px; background: var(--grad); font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; color: #fff; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(26,158,63,.35), 0 2px 8px rgba(0,0,0,.08); transition: box-shadow .3s, transform .2s; }
+  .btn-primary:hover { box-shadow: 0 8px 32px rgba(26,158,63,.5), 0 4px 12px rgba(0,0,0,.1); transform: translateY(-2px); }
+
+  .btn-secondary { display: inline-flex; align-items: center; gap: .5rem; padding: .78rem 1.8rem; border-radius: 50px; background: transparent; border: 1.5px solid rgba(26,158,63,.4); font-family: 'Syne', sans-serif; font-weight: 600; font-size: .9rem; color: var(--green-dark); cursor: pointer; transition: border-color .3s, background .3s, transform .2s; }
+  .btn-secondary:hover { border-color: var(--green); background: rgba(26,158,63,.06); transform: translateY(-2px); }
+
+  .hero-stats { display: flex; gap: 2rem; margin-top: 2.5rem; animation: fadeInUp .8s .4s both; }
+  .stat-val { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .stat-label { font-size: .75rem; color: var(--muted); font-weight: 400; }
+
+  .hero-visual { position: relative; display: flex; align-items: center; justify-content: center; animation: fadeInUp .8s .2s both; }
+
+  .id-card-wrapper { position: relative; width: 340px; height: 340px; display: flex; align-items: center; justify-content: center; }
+
+  .ring { position: absolute; border-radius: 50%; border: 1px solid rgba(26,158,63,.2); }
+  .ring1 { width: 280px; height: 280px; animation: spin 18s linear infinite; }
+  .ring2 { width: 340px; height: 340px; animation: spin 28s linear infinite reverse; border-color: rgba(45,198,83,.18); }
+  .ring3 { width: 200px; height: 200px; animation: spin 12s linear infinite; border-color: rgba(120,217,126,.2); }
+
+  .ring1::after, .ring2::after, .ring3::after { content: ''; position: absolute; width: 7px; height: 7px; border-radius: 50%; top: 50%; transform: translateY(-50%); }
+  .ring1::after { background: var(--green); box-shadow: 0 0 10px var(--green); left: -3.5px; }
+  .ring2::after { background: #2dc653; box-shadow: 0 0 10px #2dc653; right: -3.5px; top: 30%; }
+  .ring3::after { background: #78d97e; box-shadow: 0 0 10px #78d97e; bottom: -3.5px; top: auto; left: 50%; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .id-card-face { width: 200px; height: 130px; background: linear-gradient(135deg, #e8f7ed, #f0faf4); border-radius: 14px; border: 1px solid rgba(26,158,63,.25); box-shadow: 0 8px 32px rgba(26,158,63,.15), inset 0 1px 0 rgba(255,255,255,.8); padding: 14px; position: relative; z-index: 2; animation: float 4s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+
+  .card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .card-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--grad); display: flex; align-items: center; justify-content: center; font-size: .8rem; color: #fff; font-weight: 700; box-shadow: 0 0 12px rgba(26,158,63,.4); }
+  .card-lines { flex: 1; }
+  .card-line { height: 6px; border-radius: 3px; background: rgba(26,158,63,.15); margin-bottom: 4px; }
+  .card-line.short { width: 55%; }
+
+  .scan-line { position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--green), transparent); top: 0; animation: scanAnim 2.5s ease-in-out infinite; border-radius: 99px; box-shadow: 0 0 12px var(--green); }
+  @keyframes scanAnim { 0%{top:10%} 100%{top:90%} }
+
+  .scan-corner { position: absolute; width: 14px; height: 14px; border-color: var(--green); border-style: solid; box-shadow: 0 0 8px rgba(26,158,63,.4); }
+  .sc-tl { top: 6px; left: 6px; border-width: 2px 0 0 2px; }
+  .sc-tr { top: 6px; right: 6px; border-width: 2px 2px 0 0; }
+  .sc-bl { bottom: 6px; left: 6px; border-width: 0 0 2px 2px; }
+  .sc-br { bottom: 6px; right: 6px; border-width: 0 2px 2px 0; }
+
+  .chip { position: absolute; z-index: 3; padding: .4rem .8rem; background: rgba(255,255,255,.95); border: 1px solid rgba(26,158,63,.2); border-radius: 50px; font-size: .72rem; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: .4rem; backdrop-filter: blur(10px); box-shadow: 0 4px 16px rgba(0,0,0,.08); white-space: nowrap; }
+  .chip-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .chip.verified { bottom: 0; right: -40px; animation: floatChip1 4s ease-in-out infinite; }
+  .chip.scan-chip { top: 20px; left: -50px; animation: floatChip2 3.5s ease-in-out infinite; }
+  .chip.match-chip { top: 60%; right: -60px; animation: floatChip3 5s ease-in-out infinite; }
+  @keyframes floatChip1 { 0%,100%{transform:translateY(0) translateX(0)} 50%{transform:translateY(-6px) translateX(3px)} }
+  @keyframes floatChip2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(8px)} }
+  @keyframes floatChip3 { 0%,100%{transform:translateY(0) translateX(0)} 50%{transform:translateY(-4px) translateX(-4px)} }
+
+  section { position: relative; z-index: 1; }
+  .section-inner { max-width: 1200px; margin: 0 auto; padding: 6rem 5%; }
+
+  .section-label { display: inline-flex; align-items: center; gap: .5rem; font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--green); margin-bottom: 1rem; }
+  .section-label::before { content: ''; width: 18px; height: 2px; background: var(--grad); border-radius: 2px; }
+
+  .section-title { font-size: clamp(1.9rem, 4vw, 2.8rem); font-weight: 800; letter-spacing: -.025em; color: var(--text); margin-bottom: .8rem; }
+  .section-sub { color: var(--muted); font-size: .98rem; max-width: 520px; font-weight: 300; }
+
+  #features { background: var(--surface); }
+  #features::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(26,158,63,.06), transparent); pointer-events: none; }
+
+  .features-header { text-align: center; margin-bottom: 4rem; }
+  .features-header .section-label { justify-content: center; }
+  .features-header .section-sub { margin: 0 auto; }
+
+  .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
+
+  .feature-card { background: #ffffff; border: 1px solid rgba(26,158,63,.14); border-radius: 20px; padding: 2rem; position: relative; overflow: hidden; transition: transform .3s, box-shadow .3s, border-color .3s; cursor: default; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
+  .feature-card::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(26,158,63,.06), transparent 60%); opacity: 0; transition: opacity .3s; }
+  .feature-card:hover::before { opacity: 1; }
+  .feature-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(26,158,63,.12), 0 4px 16px rgba(0,0,0,.06); border-color: rgba(26,158,63,.3); }
+
+  .feature-icon { width: 52px; height: 52px; border-radius: 14px; background: var(--grad); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 1.3rem; box-shadow: 0 4px 14px rgba(26,158,63,.3); }
+  .feature-icon.cyan { background: linear-gradient(135deg,#059669,#10b981); box-shadow: 0 4px 14px rgba(5,150,105,.3); }
+  .feature-icon.purple { background: linear-gradient(135deg,#0d9488,#14b8a6); box-shadow: 0 4px 14px rgba(13,148,136,.3); }
+  .feature-icon.teal { background: linear-gradient(135deg,#15803d,#16a34a); box-shadow: 0 4px 14px rgba(21,128,61,.3); }
+
+  .feature-title { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700; margin-bottom: .5rem; color: var(--text); }
+  .feature-desc { font-size: .88rem; color: var(--muted); font-weight: 300; }
+  .feature-tag { display: inline-block; margin-top: 1rem; padding: .25rem .65rem; border-radius: 50px; background: var(--green-light); border: 1px solid rgba(26,158,63,.2); font-size: .7rem; font-weight: 500; color: var(--green-dark); }
+
+  #how { background: var(--bg); }
+
+  .steps-track { display: flex; gap: 0; align-items: flex-start; position: relative; margin-top: 4rem; justify-content: space-between; }
+  .steps-track::before { content: ''; position: absolute; top: 28px; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, var(--blue), var(--purple), var(--cyan)); opacity: .3; }
+
+  .step { flex: 1; text-align: center; position: relative; padding: 0 1rem; transition: transform .3s; }
+  .step:hover { transform: translateY(-5px); }
+
+  .step-num { width: 56px; height: 56px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.4rem; font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; position: relative; z-index: 2; transition: border-color .3s, box-shadow .3s; }
+  .step:hover .step-num { border-color: var(--blue); box-shadow: 0 0 20px rgba(59,110,255,.4); }
+  .step-num .num-grad { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .step-icon { font-size: 1.8rem; margin-bottom: .9rem; display: block; }
+  .step-title { font-family: 'Syne', sans-serif; font-size: .95rem; font-weight: 700; margin-bottom: .4rem; }
+  .step-desc { font-size: .82rem; color: var(--muted); font-weight: 300; }
+
+  #faq { background: var(--surface); position: relative; }
+  #faq::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 50% 60% at 80% 50%, rgba(26,158,63,.05), transparent); pointer-events: none; }
+
+  .faq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; margin-top: 3.5rem; }
+  .faq-left .section-title { font-size: clamp(2rem, 4vw, 2.8rem); margin-bottom: 1rem; }
+
+  .faq-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 1rem; overflow: hidden; transition: box-shadow .3s, border-color .3s; }
+  .faq-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,.04); border-color: rgba(26,158,63,.3); }
+
+  .faq-question { width: 100%; text-align: left; padding: 1.2rem 1.5rem; background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 1.05rem; font-weight: 600; color: var(--text); display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+
+  .faq-icon { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--green); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 400; line-height: 1; transition: transform .3s, background .3s, color .3s; }
+  .faq-item.active .faq-icon { transform: rotate(45deg); background: var(--green); color: #fff; }
+
+  .faq-answer { max-height: 0; overflow: hidden; transition: max-height .4s ease; padding: 0 1.5rem; font-size: .9rem; color: var(--muted); line-height: 1.6; }
+  .faq-item.active .faq-answer { padding-bottom: 1.2rem; max-height: 500px; }
+
+  #about { background: var(--bg); overflow: hidden; }
+  .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
+  .about-visual { position: relative; height: 380px; }
+  .about-card { position: absolute; background: var(--surface2); border: 1px solid var(--border); border-radius: 18px; padding: 1.3rem 1.5rem; backdrop-filter: blur(10px); }
+  .ac1 { top: 0; left: 0; width: 230px; animation: float 5s ease-in-out infinite; }
+  .ac2 { top: 80px; right: 0; width: 210px; animation: float 4s ease-in-out infinite .8s; }
+  .ac3 { bottom: 20px; left: 30px; width: 250px; animation: float 6s ease-in-out infinite .4s; }
+  .ac-head { font-family: 'Syne', sans-serif; font-size: .85rem; font-weight: 700; margin-bottom: .6rem; color: var(--text); }
+  .ac-line { height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); margin-bottom: .4rem; }
+  .ac-line.fill-blue { background: linear-gradient(90deg, var(--blue), var(--purple)); width: 75%; }
+  .ac-line.fill-cyan { background: var(--grad2); width: 60%; }
+  .ac-line.fill-purple { background: linear-gradient(90deg,#7c3aed,#a855f7); width: 85%; }
+
+  .about-tag { display: inline-flex; align-items: center; gap: .4rem; padding: .25rem .65rem; border-radius: 50px; font-size: .7rem; font-weight: 500; margin-right: .4rem; margin-bottom: .4rem; }
+  .at-blue { background: rgba(59,110,255,.1); border: 1px solid rgba(59,110,255,.2); color: #7eaaff; }
+  .at-purple { background: rgba(124,58,237,.1); border: 1px solid rgba(124,58,237,.2); color: #c084fc; }
+  .at-cyan { background: rgba(6,182,212,.1); border: 1px solid rgba(6,182,212,.2); color: #67e8f9; }
+
+  .about-list { list-style: none; margin: 1.5rem 0; }
+  .about-list li { display: flex; align-items: flex-start; gap: .8rem; margin-bottom: .9rem; font-size: .9rem; color: var(--muted); }
+  .about-list li::before { content: '✦'; font-size: .6rem; color: var(--blue); margin-top: .35rem; flex-shrink: 0; }
+
+  @keyframes fadeInUp { from { opacity:0; transform: translateY(24px); } to { opacity:1; transform: translateY(0); } }
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1); }
+  .reveal.visible { opacity:1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: .1s; }
+  .reveal-delay-2 { transition-delay: .2s; }
+  .reveal-delay-3 { transition-delay: .3s; }
+  .reveal-delay-4 { transition-delay: .4s; }
+
+  @media(max-width:900px) {
+    .hero-inner, .faq-grid, .about-grid { grid-template-columns: 1fr; }
+    .hero-visual { order: -1; }
+    .id-card-wrapper { width: 260px; height: 260px; }
+    .steps-track { flex-wrap: wrap; gap: 2rem; }
+    .steps-track::before { display: none; }
+    .step { flex: 1 1 40%; }
+    .about-visual { height: 300px; }
+  }
+  @media(max-width:600px) {
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
+    .nav-links.open { display: flex; flex-direction: column; position: fixed; top: 60px; left: 0; right: 0; background: rgba(5,8,16,.97); padding: 2rem; border-bottom: 1px solid var(--border); }
+    .hero-stats { flex-wrap: wrap; gap: 1.2rem; }
+    .step { flex: 1 1 100%; }
+    .about-visual { display: none; }
+    .about-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ══════════════════════════════════════════
+     FOOTER — SIP Hackstorm · Team · Contact
+  ══════════════════════════════════════════ */
+  footer { background: var(--surface); border-top: 1px solid var(--border); position: relative; overflow: hidden; }
+  footer::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--grad); }
+
+  /* Hero band */
+  .footer-hero { background: linear-gradient(135deg, #0d5c22 0%, #1a9e3f 50%, #147a30 100%); padding: 3.5rem 5%; text-align: center; position: relative; overflow: hidden; }
+  .footer-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 100%, rgba(45,198,83,.25), transparent); pointer-events: none; }
+  .footer-project-badge { display: inline-flex; align-items: center; gap: .5rem; padding: .3rem .9rem; border-radius: 50px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.1); font-size: .72rem; font-weight: 600; color: rgba(255,255,255,.9); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 1rem; }
+  .footer-project-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #78d97e; box-shadow: 0 0 8px #78d97e; animation: pulse 2s infinite; }
+  .footer-project-name { font-family: 'Syne', sans-serif; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; color: #fff; letter-spacing: -.02em; margin-bottom: .5rem; }
+  .footer-project-name span { background: linear-gradient(90deg,#78d97e,#c6ecd2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .footer-tagline { font-size: .95rem; color: rgba(255,255,255,.75); font-weight: 300; margin-bottom: .6rem; }
+  .footer-college { font-size: .8rem; color: rgba(255,255,255,.55); display: flex; align-items: center; justify-content: center; gap: .4rem; }
+  .footer-college::before { content: '📍'; font-size: .75rem; }
+
+  /* Team section */
+  .footer-team { padding: 4rem 5%; max-width: 1200px; margin: 0 auto; }
+  .footer-section-title { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--text); margin-bottom: .4rem; display: flex; align-items: center; gap: .7rem; }
+  .footer-section-title::before { content: ''; width: 22px; height: 3px; background: var(--grad); border-radius: 2px; flex-shrink: 0; }
+  .footer-section-sub { font-size: .85rem; color: var(--muted); margin-bottom: 2.5rem; margin-left: 29px; }
+
+  .team-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.2rem; }
+
+  .team-card { background: #ffffff; border: 1px solid rgba(26,158,63,.14); border-radius: 18px; padding: 1.5rem 1.2rem; text-align: center; transition: transform .3s, box-shadow .3s, border-color .3s; cursor: default; position: relative; overflow: hidden; }
+  .team-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--grad); transform: scaleX(0); transform-origin: left; transition: transform .3s; }
+  .team-card:hover { transform: translateY(-6px); box-shadow: 0 16px 36px rgba(26,158,63,.14), 0 4px 12px rgba(0,0,0,.05); border-color: rgba(26,158,63,.3); }
+  .team-card:hover::before { transform: scaleX(1); }
+
+  .team-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--grad); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0 auto 1rem; box-shadow: 0 4px 14px rgba(26,158,63,.35); flex-shrink: 0; }
+  .team-card:nth-child(2) .team-avatar { background: linear-gradient(135deg,#059669,#10b981); box-shadow: 0 4px 14px rgba(5,150,105,.35); }
+  .team-card:nth-child(3) .team-avatar { background: linear-gradient(135deg,#0d9488,#14b8a6); box-shadow: 0 4px 14px rgba(13,148,136,.35); }
+  .team-card:nth-child(4) .team-avatar { background: linear-gradient(135deg,#15803d,#22c55e); box-shadow: 0 4px 14px rgba(21,128,61,.35); }
+  .team-card:nth-child(5) .team-avatar { background: linear-gradient(135deg,#166534,#16a34a); box-shadow: 0 4px 14px rgba(22,101,52,.35); }
+
+  .team-name { font-family: 'Syne', sans-serif; font-size: .9rem; font-weight: 700; color: var(--text); margin-bottom: .35rem; line-height: 1.3; }
+  .team-role { font-size: .73rem; color: var(--green-dark); font-weight: 500; line-height: 1.4; margin-bottom: .7rem; background: var(--green-light); border: 1px solid rgba(26,158,63,.2); border-radius: 50px; padding: .18rem .6rem; display: inline-block; }
+  .team-phone { display: flex; align-items: center; justify-content: center; gap: .35rem; font-size: .76rem; color: var(--muted); font-weight: 400; margin-top: .5rem; }
+  .team-phone::before { content: '📞'; font-size: .7rem; }
+
+  /* Contact section */
+  .footer-contact-wrap { border-top: 1px solid var(--border); padding: 3.5rem 5%; background: #fff; }
+  .footer-contact-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.4fr; gap: 5rem; align-items: start; }
+
+  .contact-info-list { list-style: none; margin-left: 29px; margin-top: 1.5rem; }
+  .contact-info-list li { display: flex; align-items: flex-start; gap: .9rem; margin-bottom: 1.2rem; }
+  .ci-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--green-light); border: 1px solid rgba(26,158,63,.2); display: flex; align-items: center; justify-content: center; font-size: .9rem; flex-shrink: 0; }
+  .ci-text { flex: 1; }
+  .ci-label { font-size: .7rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .08em; }
+  .ci-value { font-size: .88rem; color: var(--text); font-weight: 500; word-break: break-all; }
+  .ci-value a { color: var(--green-dark); transition: color .2s; }
+  .ci-value a:hover { color: var(--green); }
+
+  /* Contact form */
+  .contact-form { display: flex; flex-direction: column; gap: 1rem; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .form-group { display: flex; flex-direction: column; gap: .4rem; }
+  .form-label { font-size: .75rem; font-weight: 600; color: var(--text); letter-spacing: .04em; text-transform: uppercase; }
+  .form-input, .form-textarea { width: 100%; padding: .75rem 1rem; border-radius: 12px; border: 1.5px solid rgba(26,158,63,.2); background: var(--surface); font-family: 'DM Sans', sans-serif; font-size: .9rem; color: var(--text); outline: none; transition: border-color .25s, box-shadow .25s, background .25s; }
+  .form-input::placeholder, .form-textarea::placeholder { color: #9ca3af; }
+  .form-input:focus, .form-textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(26,158,63,.12); background: #fff; }
+  .form-textarea { resize: vertical; min-height: 110px; line-height: 1.6; }
+
+  .form-submit { padding: .82rem 2rem; border-radius: 50px; background: var(--grad); font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; color: #fff; border: none; cursor: pointer; box-shadow: 0 4px 18px rgba(26,158,63,.35); transition: box-shadow .3s, transform .2s; align-self: flex-start; display: inline-flex; align-items: center; gap: .5rem; }
+  .form-submit:hover { box-shadow: 0 8px 28px rgba(26,158,63,.5); transform: translateY(-2px); }
+
+  .form-success { display: none; padding: .8rem 1.2rem; border-radius: 12px; background: var(--green-light); border: 1px solid rgba(26,158,63,.25); font-size: .88rem; color: var(--green-dark); font-weight: 500; align-items: center; gap: .5rem; }
+  .form-success.show { display: flex; }
+
+  /* Bottom bar */
+  .footer-bottom-bar { background: var(--surface); border-top: 1px solid var(--border); padding: 1.4rem 5%; }
+  .footer-bottom-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  .footer-copy { font-size: .8rem; color: var(--muted); }
+  .footer-copy strong { color: var(--green-dark); }
+  .footer-socials { display: flex; gap: .8rem; }
+  .social-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: .85rem; color: var(--muted); transition: color .2s, border-color .2s, box-shadow .2s; }
+  .social-btn:hover { color: var(--green); border-color: var(--green); box-shadow: 0 0 12px rgba(26,158,63,.3); }
+
+  /* Responsive footer */
+  @media(max-width:900px) {
+    .team-grid { grid-template-columns: repeat(3, 1fr); }
+    .footer-contact-inner { grid-template-columns: 1fr; gap: 3rem; }
+  }
+  @media(max-width:600px) {
+    .team-grid { grid-template-columns: repeat(2, 1fr); }
+    .form-row { grid-template-columns: 1fr; }
+    .footer-bottom-inner { flex-direction: column; text-align: center; }
+    .footer-section-sub { margin-left: 0; }
+    .contact-info-list { margin-left: 0; }
+  }
+  @media(max-width:400px) {
+    .team-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ══════════════════════════════════════════
+     HOW IT WORKS — Animated Interactive Flow
+  ══════════════════════════════════════════ */
+
+  #how { background: var(--bg); overflow: hidden; }
+
+  .how-inner { text-align: center; }
+
+  .how-header { margin-bottom: 4rem; }
+
+  /* ── Track wrapper ── */
+  .how-track-wrap {
+    position: relative;
+    padding: 2rem 0 3rem;
+    margin: 0 auto;
+    max-width: 1100px;
+  }
+
+  /* ── Progress bar ── */
+  .how-progress-bg {
+    position: absolute;
+    top: 52px; /* vertically center on circles */
+    left: calc(12.5% + 28px);
+    right: calc(12.5% + 28px);
+    height: 3px;
+    background: rgba(26,158,63,.12);
+    border-radius: 99px;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .how-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--grad);
+    border-radius: 99px;
+    transition: width 0.55s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 0 10px rgba(26,158,63,.5);
+  }
+
+  /* ── Steps row ── */
+  .how-steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Individual step ── */
+  .how-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity .6s cubic-bezier(.16,1,.3,1), transform .6s cubic-bezier(.16,1,.3,1);
+  }
+  .how-step.step-entered { opacity: 1; transform: translateY(0); }
+
+  /* ── Step node (circle + number) ── */
+  .how-step-node {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .4rem;
+  }
+
+  /* Pulse ring — only visible on active */
+  .how-step-pulse {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    border: 2px solid var(--green);
+    opacity: 0;
+    transition: opacity .3s;
+    pointer-events: none;
+  }
+  .how-step.step-active .how-step-pulse {
+    opacity: 1;
+    animation: howPulseRing 1.4s ease-out infinite;
+  }
+
+  @keyframes howPulseRing {
+    0%   { transform: translate(-50%,-50%) scale(.85); opacity: .9; }
+    100% { transform: translate(-50%,-50%) scale(1.55); opacity: 0; }
+  }
+
+  .how-step-circle {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid rgba(26,158,63,.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    transition: background .35s, border-color .35s, transform .35s, box-shadow .35s;
+    cursor: default;
+    position: relative;
+    z-index: 2;
+  }
+
+  .how-step:hover .how-step-circle {
+    transform: translateY(-4px) scale(1.08);
+    box-shadow: 0 8px 24px rgba(26,158,63,.2);
+  }
+
+  .how-step.step-active .how-step-circle {
+    background: var(--grad);
+    border-color: transparent;
+    box-shadow: 0 0 0 4px rgba(26,158,63,.15), 0 8px 28px rgba(26,158,63,.35);
+    transform: scale(1.12);
+    animation: howIconBounce .5s cubic-bezier(.36,.07,.19,.97) both;
+  }
+
+  @keyframes howIconBounce {
+    0%  { transform: scale(1.12) translateY(0); }
+    30% { transform: scale(1.12) translateY(-6px); }
+    60% { transform: scale(1.12) translateY(2px); }
+    80% { transform: scale(1.12) translateY(-3px); }
+    100%{ transform: scale(1.12) translateY(0); }
+  }
+
+  .how-step-emoji {
+    display: inline-block;
+    transition: filter .35s;
+    line-height: 1;
+  }
+  .how-step.step-active .how-step-emoji {
+    filter: brightness(0) invert(1);
+    animation: howEmojiScale .4s ease both;
+  }
+  @keyframes howEmojiScale {
+    0%  { transform: scale(.7); }
+    70% { transform: scale(1.15); }
+    100%{ transform: scale(1); }
+  }
+
+  .how-step-num {
+    font-family: 'Syne', sans-serif;
+    font-size: .68rem; font-weight: 800;
+    color: var(--muted);
+    letter-spacing: .08em;
+    transition: color .3s;
+  }
+  .how-step.step-active .how-step-num {
+    background: var(--grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* ── Step card ── */
+  .how-step-card {
+    background: #fff;
+    border: 1.5px solid rgba(26,158,63,.14);
+    border-radius: 18px;
+    padding: 1.3rem 1.1rem 1.1rem;
+    width: 100%;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .35s, box-shadow .35s, transform .35s;
+  }
+  .how-step-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--grad);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .45s cubic-bezier(.4,0,.2,1);
+    border-radius: 3px 3px 0 0;
+  }
+
+  .how-step:hover .how-step-card {
+    box-shadow: 0 10px 30px rgba(26,158,63,.1);
+    transform: translateY(-4px);
+    border-color: rgba(26,158,63,.3);
+  }
+
+  .how-step.step-active .how-step-card {
+    border-color: rgba(26,158,63,.4);
+    box-shadow: 0 12px 36px rgba(26,158,63,.16), 0 0 0 3px rgba(26,158,63,.07);
+    transform: translateY(-4px);
+  }
+  .how-step.step-active .how-step-card::before { transform: scaleX(1); }
+
+  .how-step-tag {
+    display: inline-block;
+    font-size: .68rem; font-weight: 600;
+    color: var(--green-dark);
+    background: var(--green-light);
+    border: 1px solid rgba(26,158,63,.2);
+    border-radius: 50px;
+    padding: .15rem .55rem;
+    margin-bottom: .5rem;
+    transition: background .3s;
+  }
+  .how-step.step-active .how-step-tag {
+    background: rgba(26,158,63,.15);
+  }
+
+  .how-step-title {
+    font-family: 'Syne', sans-serif;
+    font-size: .95rem; font-weight: 700;
+    color: var(--text);
+    margin-bottom: .35rem;
+    line-height: 1.3;
+  }
+
+  .how-step-desc {
+    font-size: .8rem; color: var(--muted);
+    font-weight: 300; line-height: 1.55;
+    margin-bottom: .7rem;
+  }
+
+  .how-step-tick {
+    display: inline-flex; align-items: center; gap: .3rem;
+    font-size: .72rem; font-weight: 600;
+    color: var(--green);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity .4s .1s, transform .4s .1s;
+  }
+  .how-step.step-active .how-step-tick {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── Indicator dots ── */
+  .how-dots {
+    display: flex; align-items: center; justify-content: center;
+    gap: .5rem; margin-top: 2rem;
+  }
+  .how-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(26,158,63,.2);
+    cursor: pointer;
+    transition: background .3s, transform .3s, width .3s;
+    border-radius: 99px;
+  }
+  .how-dot.dot-active {
+    background: var(--green);
+    width: 24px;
+    box-shadow: 0 0 8px rgba(26,158,63,.4);
+  }
+
+  /* ── Responsive ── */
+  @media(max-width:900px) {
+    .how-steps { grid-template-columns: repeat(2, 1fr); gap: 2rem; }
+    .how-progress-bg { display: none; }
+  }
+  @media(max-width:540px) {
+    .how-steps { grid-template-columns: 1fr; gap: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="navbar">
+  <div class="logo">SIP<span> Portal</span></div>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#home" class="active">Home</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="verification.html" class="nav-cta">Start Verification</a>
+  <div class="hamburger" id="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<section id="home">
+  <div class="hero-bg-orb orb1"></div>
+  <div class="hero-bg-orb orb2"></div>
+  <div class="hero-bg-orb orb3"></div>
+
+  <div class="hero-inner">
+    <div class="hero-content">
+      <div class="hero-badge">AI-Powered · Real-time · Privacy-First</div>
+      <h1 class="hero-title">
+        AI Identity<br>
+        <span class="grad-word">Verification</span><br>
+        System
+      </h1>
+      <p class="hero-sub">Secure Aadhaar and PAN verification powered by advanced AI fraud detection. Protect your platform with instant identity intelligence.</p>
+      <div class="hero-btns">
+        <a href="verification.html" class="btn-primary"><span>▶</span> Start Verification</a>
+        <a href="#features" class="btn-secondary">Explore Features →</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item"><div class="stat-val">99.4%</div><div class="stat-label">Accuracy Rate</div></div>
+        <div class="stat-item"><div class="stat-val">&lt;2s</div><div class="stat-label">Avg. Response Time</div></div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="id-card-wrapper">
+        <div class="ring ring1"></div>
+        <div class="ring ring2"></div>
+        <div class="ring ring3"></div>
+        <div class="id-card-face">
+          <div class="scan-line"></div>
+          <div class="scan-corner sc-tl"></div>
+          <div class="scan-corner sc-tr"></div>
+          <div class="scan-corner sc-bl"></div>
+          <div class="scan-corner sc-br"></div>
+          <div class="card-top">
+            <div class="card-avatar">ID</div>
+            <div class="card-lines">
+              <div class="card-line"></div>
+              <div class="card-line short"></div>
+            </div>
+          </div>
+          <div class="card-line" style="margin-bottom:6px"></div>
+          <div class="card-line short" style="width:40%"></div>
+        </div>
+        <div class="chip verified"><div class="chip-dot" style="background:#34d399;box-shadow:0 0 6px #34d399"></div>Identity Verified</div>
+        <div class="chip scan-chip"><div class="chip-dot" style="background:#06b6d4;box-shadow:0 0 6px #06b6d4"></div>Scanning Doc...</div>
+        <div class="chip match-chip"><div class="chip-dot" style="background:#7c3aed;box-shadow:0 0 6px #7c3aed"></div>Face Match 97%</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="section-inner">
+    <div class="features-header reveal">
+      <div class="section-label">Core Capabilities</div>
+      <h2 class="section-title">Everything You Need to<br>Verify with Confidence</h2>
+      <p class="section-sub">A full-stack AI verification engine built for compliance-heavy, high-stakes digital onboarding.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon">🧠</div>
+        <div class="feature-title">Face Matching</div>
+        <div class="feature-desc">Compare selfie with ID card photo using our deep-learning facial recognition model trained on diverse datasets for fair, accurate results.</div>
+        <div class="feature-tag">FaceNet v3 · 128-dim Embeddings</div>
+      </div>
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon cyan">🔍</div>
+        <div class="feature-title">Document Tampering Detection</div>
+        <div class="feature-desc">Detect edited or manipulated identity documents through pixel-level forensic analysis — catches JPEG artifacts, clone stamps, and metadata anomalies.</div>
+        <div class="feature-tag">ELA · Forensic Analysis</div>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon purple">📋</div>
+        <div class="feature-title">Duplicate Document Detection</div>
+        <div class="feature-desc">Prevent reuse of the same document across multiple accounts using perceptual hashing and cross-database fingerprinting in real time.</div>
+        <div class="feature-tag">pHash · Cross-DB Lookup</div>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-icon teal">🔒</div>
+        <div class="feature-title">Privacy-First Architecture</div>
+        <div class="feature-desc">Sensitive identity data is processed locally and never stored raw. All biometric operations use ephemeral memory with zero persistent PII retention.</div>
+        <div class="feature-tag">Zero-Storage · DPDP Compliant</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Real-Time OCR Extraction</div>
+        <div class="feature-desc">Extract text fields from Aadhaar, PAN, Passport and Voter ID cards with high-confidence optical character recognition optimised for Indian scripts.</div>
+        <div class="feature-tag">Tesseract · Custom Model</div>
+      </div>
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon cyan">📊</div>
+        <div class="feature-title">Fraud Risk Scoring</div>
+        <div class="feature-desc">Receive a composite fraud risk score combining face confidence, document authenticity, liveness signals, and behavioral anomaly indicators.</div>
+        <div class="feature-tag">Ensemble Model · Explainable AI</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="section-inner how-inner">
+
+    <!-- Header -->
+    <div class="how-header reveal">
+      <div class="section-label" style="justify-content:center">Process</div>
+      <h2 class="section-title">Four Steps to<br>Instant Verification</h2>
+      <p class="section-sub" style="margin:0 auto">Our streamlined pipeline delivers a decision in under two seconds.</p>
+    </div>
+
+    <!-- Steps wrapper -->
+    <div class="how-track-wrap" id="howTrack">
+
+      <!-- Progress bar background + animated fill -->
+      <div class="how-progress-bg">
+        <div class="how-progress-fill" id="howProgressFill"></div>
+      </div>
+
+      <!-- Step nodes -->
+      <div class="how-steps">
+
+        <div class="how-step" data-step="0">
+          <div class="how-step-node">
+            <div class="how-step-pulse"></div>
+            <div class="how-step-circle">
+              <span class="how-step-emoji">🪪</span>
+            </div>
+            <div class="how-step-num">01</div>
+          </div>
+          <div class="how-step-card">
+            <div class="how-step-tag">Step 1</div>
+            <div class="how-step-title">Upload ID Card</div>
+            <div class="how-step-desc">User submits their Aadhaar, PAN, or other government-issued document securely.</div>
+            <div class="how-step-tick">✓ Accepted</div>
+          </div>
+        </div>
+
+        <div class="how-step" data-step="1">
+          <div class="how-step-node">
+            <div class="how-step-pulse"></div>
+            <div class="how-step-circle">
+              <span class="how-step-emoji">🤳</span>
+            </div>
+            <div class="how-step-num">02</div>
+          </div>
+          <div class="how-step-card">
+            <div class="how-step-tag">Step 2</div>
+            <div class="how-step-title">Upload Selfie</div>
+            <div class="how-step-desc">A live selfie or photo is submitted for biometric face matching against the document.</div>
+            <div class="how-step-tick">✓ Captured</div>
+          </div>
+        </div>
+
+        <div class="how-step" data-step="2">
+          <div class="how-step-node">
+            <div class="how-step-pulse"></div>
+            <div class="how-step-circle">
+              <span class="how-step-emoji">🤖</span>
+            </div>
+            <div class="how-step-num">03</div>
+          </div>
+          <div class="how-step-card">
+            <div class="how-step-tag">Step 3</div>
+            <div class="how-step-title">AI Verification</div>
+            <div class="how-step-desc">Our model runs face match, tampering detection, OCR, and duplicate checks in parallel.</div>
+            <div class="how-step-tick">✓ Processing</div>
+          </div>
+        </div>
+
+        <div class="how-step" data-step="3">
+          <div class="how-step-node">
+            <div class="how-step-pulse"></div>
+            <div class="how-step-circle">
+              <span class="how-step-emoji">✅</span>
+            </div>
+            <div class="how-step-num">04</div>
+          </div>
+          <div class="how-step-card">
+            <div class="how-step-tag">Step 4</div>
+            <div class="how-step-title">Verification Result</div>
+            <div class="how-step-desc">A final decision — Verified, Flagged, or Rejected — returned with confidence scores.</div>
+            <div class="how-step-tick">✓ Complete</div>
+          </div>
+        </div>
+
+      </div><!-- /how-steps -->
+    </div><!-- /how-track-wrap -->
+
+    <!-- Step indicator dots -->
+    <div class="how-dots" id="howDots">
+      <span class="how-dot" data-dot="0"></span>
+      <span class="how-dot" data-dot="1"></span>
+      <span class="how-dot" data-dot="2"></span>
+      <span class="how-dot" data-dot="3"></span>
+    </div>
+
+  </div>
+</section>
+
+<section id="faq">
+  <div class="section-inner">
+    <div class="faq-grid">
+      <div class="faq-left reveal">
+        <div class="section-label">Questions</div>
+        <h2 class="section-title">Frequently Asked<br>Questions</h2>
+        <p class="section-sub">Here you'll find answers to the most common questions about setup, privacy, and how our AI processes your identity verification quickly and securely.</p>
+      </div>
+      <div class="faq-right reveal reveal-delay-1">
+        <div class="faq-item">
+          <button class="faq-question">How does SIP protect user privacy?<span class="faq-icon">+</span></button>
+          <div class="faq-answer"><p>All data is processed strictly in memory. We do not store any raw biometric data, images, or personally identifiable information on our servers once the session ends, ensuring full compliance with India's DPDP Act 2023.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">Which government documents are supported?<span class="faq-icon">+</span></button>
+          <div class="faq-answer"><p>Our models are actively trained and tested to support major Indian government documents, including the Aadhaar Card, PAN Card, Indian Passport, and Voter ID.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">Can we integrate this into our own application?<span class="faq-icon">+</span></button>
+          <div class="faq-answer"><p>Yes. Our backend runs via robust REST APIs that can be directly integrated into your existing web platforms, iOS, and Android mobile applications effortlessly.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">How accurate is the Face Matching algorithm?<span class="faq-icon">+</span></button>
+          <div class="faq-answer"><p>We use state-of-the-art DeepFace technology that generates 128-dimensional embeddings. Our models achieve over 99.4% accuracy on diverse benchmark datasets, keeping false rejections and spoofing attempts to an absolute minimum.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="about">
+  <div class="section-inner">
+    <div class="about-grid">
+      <div class="about-visual reveal">
+        <div class="about-card ac1"><div class="ac-head">🛡️ Zero-Knowledge Processing</div><div class="ac-line fill-blue"></div><div class="ac-line" style="width:50%"></div></div>
+        <div class="about-card ac2"><div class="ac-head">🌐 Multi-Document Support</div><div class="ac-line fill-cyan"></div><div class="ac-line" style="width:45%"></div></div>
+        <div class="about-card ac3"><div class="ac-head">⚙️ AI Model Accuracy</div><div class="ac-line fill-purple"></div><div style="font-family:'Syne',sans-serif;font-size:.8rem;margin-top:.5rem;color:#c084fc">99.4% on benchmark dataset</div></div>
+      </div>
+      <div class="reveal reveal-delay-1">
+        <div class="section-label">About SIP</div>
+        <h2 class="section-title">Built for Trust.<br>Designed for Scale.</h2>
+        <p style="color:var(--muted);font-size:.9rem;font-weight:300;margin-bottom:1rem">SIP (Safe ID Promise) is an advanced AI-powered identity verification platform purpose-built for the Indian fintech, insurtech, and gig economy ecosystem. We believe that security and privacy are not trade-offs — they are complementary pillars.</p>
+        <p style="color:var(--muted);font-size:.9rem;font-weight:300">Our platform processes Aadhaar and PAN documents locally using on-device AI models, ensuring that no raw biometric or personal data is ever transmitted to external servers. Decisions are transparent, explainable, and auditable.</p>
+        <ul class="about-list">
+          <li>All biometric data processed in ephemeral memory — zero persistent PII storage</li>
+          <li>Compliant with India's Digital Personal Data Protection Act (DPDP) 2023</li>
+          <li>On-premise deployment available for enterprise clients with air-gapped environments</li>
+          <li>Explainable AI — every decision comes with a human-readable rationale and confidence breakdown</li>
+        </ul>
+        <div style="margin-top:.5rem">
+          <span class="about-tag at-blue">DPDP Compliant</span>
+          <span class="about-tag at-purple">ISO 27001</span>
+          <span class="about-tag at-cyan">Privacy-First</span>
+          <span class="about-tag at-blue">On-Premise Ready</span>
+          <span class="about-tag at-purple">Explainable AI</span>
+        </div>
+        <a href="#faq" class="btn-primary" style="margin-top:2rem;display:inline-flex">Read the FAQ →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOOTER — SIP Hackstorm · Team · Contact Form
+════════════════════════════════════════════════════════ -->
+<footer id="contact">
+
+  <!-- ── HERO BAND ── -->
+  <div class="footer-hero">
+    <div class="footer-project-badge">Hackstorm Project</div>
+    <div class="footer-project-name">SIP — <span>Safe ID Promise</span></div>
+    <div class="footer-tagline">Privacy-First Identity Verification with AI Intelligence</div>
+    <div class="footer-college">Nilambur &amp; Kathir College of Engineering · Coimbatore, Tamil Nadu, India</div>
+  </div>
+
+  <!-- ── TEAM ── -->
+  <div class="footer-team reveal">
+    <div class="footer-section-title">Our Team</div>
+    <div class="footer-section-sub">The minds behind SIP — building trust through intelligent identity verification.</div>
+    <div class="team-grid">
+
+      <div class="team-card">
+        <div class="team-avatar">HK</div>
+        <div class="team-name">Harisaran K</div>
+        <div class="team-role">AI / Computer Vision Engineer</div>
+        <div class="team-phone">9344856434</div>
+      </div>
+
+      <div class="team-card">
+        <div class="team-avatar">KA</div>
+        <div class="team-name">Krish Agarwal</div>
+        <div class="team-role">OCR &amp; Data Extraction Engineer</div>
+        <div class="team-phone">8122083807</div>
+      </div>
+
+      <div class="team-card">
+        <div class="team-avatar">MG</div>
+        <div class="team-name">Manogar G</div>
+        <div class="team-role">Fraud Detection &amp; Decision Engine</div>
+        <div class="team-phone">8825926604</div>
+      </div>
+
+      <div class="team-card">
+        <div class="team-avatar">AT</div>
+        <div class="team-name">Abinaya T</div>
+        <div class="team-role">Frontend Developer</div>
+        <div class="team-phone">6382434329</div>
+      </div>
+
+      <div class="team-card">
+        <div class="team-avatar">MG</div>
+        <div class="team-name">Menaka G</div>
+        <div class="team-role">Backend / Integration Engineer</div>
+        <div class="team-phone">6374495167</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── CONTACT INFO + FORM ── -->
+  <div class="footer-contact-wrap">
+    <div class="footer-contact-inner">
+
+      <div class="reveal">
+        <div class="footer-section-title">Get in Touch</div>
+        <div class="footer-section-sub" style="margin-left:29px;margin-top:.3rem">Reach out for demos, partnerships, or any queries about SIP.</div>
+        <ul class="contact-info-list">
+          <li>
+            <div class="ci-icon">✉️</div>
+            <div class="ci-text">
+              <div class="ci-label">Email</div>
+              <div class="ci-value"><a href="/cdn-cgi/l/email-protection#aec5dcc7ddc6cfc9cfdcd9cfc2989e9e9ceec9c3cfc7c280cdc1c3"><span class="__cf_email__" data-cfemail="cfa4bda6bca7aea8aebdb8aea3f9fffffd8fa8a2aea6a3e1aca0a2">[email&#160;protected]</span></a></div>
+            </div>
+          </li>
+          <li>
+            <div class="ci-icon">📞</div>
+            <div class="ci-text">
+              <div class="ci-label">Phone</div>
+              <div class="ci-value"><a href="tel:+918122083807">+91 8122083807</a></div>
+            </div>
+          </li>
+          <li>
+            <div class="ci-icon">📍</div>
+            <div class="ci-text">
+              <div class="ci-label">Location</div>
+              <div class="ci-value">Coimbatore, Tamil Nadu, India</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="reveal reveal-delay-1">
+        <div class="footer-section-title">Send a Message</div>
+        <div class="footer-section-sub" style="margin-left:29px;margin-top:.3rem;margin-bottom:1.8rem">We typically respond within one business day.</div>
+        <div class="contact-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="cf-name">Name</label>
+              <input class="form-input" type="text" id="cf-name" placeholder="Your full name" autocomplete="name">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="cf-email">Email</label>
+              <input class="form-input" type="email" id="cf-email" placeholder="you@example.com" autocomplete="email">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cf-message">Message</label>
+            <textarea class="form-textarea" id="cf-message" placeholder="Tell us about your project or query…"></textarea>
+          </div>
+          <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+            <button class="form-submit" type="button" onclick="submitContactForm()">Send Message ✈️</button>
+            <div class="form-success" id="formSuccess">✅ Message sent! We'll be in touch soon.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── BOTTOM BAR ── -->
+  <div class="footer-bottom-bar">
+    <div class="footer-bottom-inner">
+      <div class="footer-copy">© 2025 <strong>SIP — Safe ID Promise</strong>. Hackstorm Project · Built with ♥ for a safer digital India.</div>
+      <div class="footer-socials">
+        <a class="social-btn" href="#" title="Twitter">𝕏</a>
+        <a class="social-btn" href="#" title="LinkedIn">in</a>
+        <a class="social-btn" href="#" title="GitHub">⌥</a>
+      </div>
+    </div>
+  </div>
+
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// NAV SCROLL
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => { navbar.classList.toggle('scrolled', scrollY > 60); });
+
+// HAMBURGER
+function toggleMenu() { document.getElementById('navLinks').classList.toggle('open'); }
+
+// SMOOTH SCROLL
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); document.getElementById('navLinks').classList.remove('open'); }
+  });
+});
+
+// SCROLL SPY
+const sections = document.querySelectorAll('section, footer');
+const navItems = document.querySelectorAll('.nav-links a[href^="#"]');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => { if (scrollY >= (s.offsetTop - 250)) current = s.getAttribute('id'); });
+  navItems.forEach(item => { item.classList.remove('active'); if (item.getAttribute('href') === `#${current}`) item.classList.add('active'); });
+});
+
+// FAQ ACCORDION
+document.querySelectorAll('.faq-question').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const item = btn.parentElement;
+    const was = item.classList.contains('active');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+    if (!was) item.classList.add('active');
+  });
+});
+
+// REVEAL
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(r => observer.observe(r));
+
+// CARD GLOW
+document.querySelectorAll('.feature-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+    card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+  });
+});
+
+// CONTACT FORM
+function submitContactForm() {
+  const name    = document.getElementById('cf-name').value.trim();
+  const email   = document.getElementById('cf-email').value.trim();
+  const message = document.getElementById('cf-message').value.trim();
+  if (!name || !email || !message) { alert('Please fill in all fields before sending.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Please enter a valid email address.'); return; }
+  document.getElementById('formSuccess').classList.add('show');
+  document.getElementById('cf-name').value = '';
+  document.getElementById('cf-email').value = '';
+  document.getElementById('cf-message').value = '';
+  setTimeout(() => document.getElementById('formSuccess').classList.remove('show'), 5000);
+}
+
+// ─── HOW IT WORKS — Animated Step Flow ───
+(function() {
+  const steps      = Array.from(document.querySelectorAll('.how-step'));
+  const dots       = Array.from(document.querySelectorAll('.how-dot'));
+  const fill       = document.getElementById('howProgressFill');
+  const STEP_COUNT = steps.length;
+  let currentStep  = -1;
+  let autoTimer    = null;
+  let hasStarted   = false;
+
+  const fillMap = [0, 34, 67, 100];
+
+  function activateStep(idx) {
+    if (idx === currentStep) return;
+    currentStep = idx;
+    steps.forEach((s, i) => s.classList.toggle('step-active', i === idx));
+    dots.forEach((d, i) => d.classList.toggle('dot-active', i === idx));
+    if (fill) fill.style.width = fillMap[idx] + '%';
+  }
+
+  function nextStep() { activateStep((currentStep + 1) % STEP_COUNT); }
+
+  function startAuto() {
+    if (autoTimer) return;
+    autoTimer = setInterval(nextStep, 1800);
+  }
+
+  function stopAuto() { clearInterval(autoTimer); autoTimer = null; }
+
+  function enterSteps() {
+    if (hasStarted) return;
+    hasStarted = true;
+    steps.forEach((s, i) => {
+      s.style.transitionDelay = (i * 0.14) + 's';
+      setTimeout(() => s.classList.add('step-entered'), i * 140);
+    });
+    setTimeout(() => { activateStep(0); startAuto(); }, steps.length * 140 + 200);
+  }
+
+  const sectionObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) enterSteps(); });
+  }, { threshold: 0.2 });
+
+  const howSection = document.getElementById('how');
+  if (howSection) sectionObserver.observe(howSection);
+
+  dots.forEach((d, i) => {
+    d.addEventListener('click', () => { stopAuto(); activateStep(i); startAuto(); });
+  });
+
+  steps.forEach((s, i) => {
+    s.addEventListener('click', () => { stopAuto(); activateStep(i); startAuto(); });
+  });
+})();
+</script>
+</body>
+</html>

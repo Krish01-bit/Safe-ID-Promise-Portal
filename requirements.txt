@@ -1,0 +1,9 @@
+Flask==3.0.2
+flask-cors==4.0.0
+opencv-python-headless==4.9.0.80
+pyzbar==0.1.9
+easyocr==1.7.1
+deepface==0.0.86
+tf-keras==2.15.0
+Pillow==10.2.0
+gunicorn==21.2.0

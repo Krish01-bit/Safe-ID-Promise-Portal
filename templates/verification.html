@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIP Portal — Identity Verification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8fbf9; --surface: #ffffff; --surface2: #f3f9f5;
+    --border: rgba(26,158,63,0.15); --green: #1a9e3f; --green-dark: #147a30;
+    --green-light: #e8f7ed; --green-mid: #c6ecd2;
+    --grad: linear-gradient(135deg, #1a9e3f, #2dc653);
+    --text: #111827; --muted: #5a6676;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,.04); --shadow-md: 0 8px 24px rgba(0,0,0,.06);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.6; min-height: 100vh; }
+  a { text-decoration: none; color: inherit; }
+  h1,h2,h3,h4 { font-family: 'Syne', sans-serif; line-height: 1.2; }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--green-mid); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+  .topbar { background: rgba(255,255,255,.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: .8rem 5%; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--green); letter-spacing: -.02em; }
+  .logo span { color: var(--text); }
+  .topbar-right { display: flex; align-items: center; gap: 1rem; }
+  .topbar-badge { display: inline-flex; align-items: center; gap: .4rem; padding: .25rem .75rem; border-radius: 50px; background: var(--green-light); border: 1px solid rgba(26,158,63,.2); font-size: .75rem; font-weight: 600; color: var(--green-dark); }
+  .topbar-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
+  .btn-back { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; font-weight: 500; color: var(--muted); padding: .3rem .6rem; border-radius: 6px; transition: color .2s, background .2s; }
+  .btn-back:hover { color: var(--text); background: var(--surface2); }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.2)} }
+
+  .page-wrap { max-width: 1140px; margin: 0 auto; padding: 2rem 4% 4rem; }
+  .page-header { text-align: center; margin-bottom: 2.5rem; animation: fadeUp .6s both; }
+  .page-header h1 { font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 800; letter-spacing: -.02em; margin-bottom: .4rem; }
+  .page-header h1 span { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .page-header p { color: var(--muted); font-size: .9rem; font-weight: 400; }
+
+  .stepper { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 2rem; animation: fadeUp .6s .1s both; }
+  .step-item { display: flex; align-items: center; gap: .5rem; font-size: .78rem; font-weight: 500; color: var(--muted); transition: color .3s; }
+  .step-item.active, .step-item.done { color: var(--green-dark); font-weight: 600; }
+  .step-num { width: 26px; height: 26px; border-radius: 50%; border: 2px solid currentColor; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: .7rem; font-weight: 700; flex-shrink: 0; transition: background .3s, border-color .3s, color .3s; }
+  .step-item.active .step-num, .step-item.done .step-num { background: var(--green); border-color: var(--green); color: #fff; }
+  .step-connector { width: 40px; height: 2px; background: var(--green-mid); margin: 0 .4rem; border-radius: 2px; flex-shrink: 0; }
+  .step-connector.done { background: var(--green); }
+
+  .content-cols { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; animation: fadeUp .6s .2s both; }
+  .left-col { display: flex; flex-direction: column; gap: 1.2rem; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; box-shadow: var(--shadow-sm); transition: box-shadow .3s; }
+  .card:hover { box-shadow: var(--shadow-md); }
+  .card-header { display: flex; align-items: center; gap: .6rem; margin-bottom: 1.2rem; }
+  .card-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--grad); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; box-shadow: 0 2px 8px rgba(26,158,63,.2); }
+  .card-title { font-family: 'Syne', sans-serif; font-size: .95rem; font-weight: 700; color: var(--text); }
+  .card-subtitle { font-size: .75rem; color: var(--muted); font-weight: 400; margin-top: .1rem; }
+
+  .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+
+  .upload-zone { border: 1.5px dashed rgba(26,158,63,.35); border-radius: 12px; padding: 2.2rem 1rem; text-align: center; cursor: pointer; background: var(--surface2); transition: border-color .2s, background .2s; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; }
+  .upload-zone:hover { border-color: var(--green); background: var(--green-light); }
+  .upload-zone.has-file { border-color: var(--green); border-style: solid; background: #f0fdf4; padding: 1rem; }
+  .upload-zone input[type=file] { display: none; }
+  .uz-icon { font-size: 1.8rem; margin-bottom: .4rem; }
+  .uz-label { font-family: 'Syne', sans-serif; font-size: .85rem; font-weight: 700; color: var(--text); margin-bottom: .2rem; }
+  .uz-sub { font-size: .7rem; color: var(--muted); }
+  .uz-sub span { color: var(--green); font-weight: 600; }
+
+  .preview-wrap { display: none; position: relative; width: 100%; }
+  .preview-wrap.show { display: block; }
+  .preview-wrap img { width: 100%; max-height: 130px; object-fit: contain; border-radius: 8px; }
+  .preview-remove { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; background: #ef4444; color: #fff; font-size: .65rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(239,68,68,.3); border: none; transition: transform .2s; }
+  .preview-remove:hover { transform: scale(1.1); }
+  .file-badge { display: inline-flex; align-items: center; gap: .3rem; margin-top: .5rem; padding: .2rem .6rem; border-radius: 50px; background: var(--green-light); border: 1px solid rgba(26,158,63,.2); font-size: .7rem; font-weight: 600; color: var(--green-dark); }
+  
+  .form-label { display: block; font-size: .78rem; font-weight: 600; color: var(--text); margin-bottom: .4rem; }
+  .input-field { width: 100%; padding: .65rem .8rem; border-radius: 10px; background: var(--surface); border: 1.5px solid var(--border); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: .85rem; outline: none; transition: border-color .2s, box-shadow .2s; }
+  .input-field:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(26,158,63,.1); }
+  select.input-field { appearance: none; cursor: pointer; }
+
+  .camera-wrap { position: relative; border-radius: 12px; overflow: hidden; background: #0d1117; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 180px; }
+  #cameraVideo { width: 100%; height: 100%; object-fit: cover; display: none; border-radius: 12px; }
+  .camera-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; color: rgba(255,255,255,.4); padding: 1.5rem; text-align: center; }
+  .camera-placeholder .cam-icon { font-size: 2rem; }
+  .camera-placeholder p { font-size: .75rem; line-height: 1.4; }
+
+  .camera-overlay { position: absolute; inset: 0; pointer-events: none; display: none; }
+  .camera-overlay.active { display: block; }
+  .cam-corner { position: absolute; width: 16px; height: 16px; border-color: var(--green); border-style: solid; }
+  .cam-corner.tl { top: 10px; left: 10px; border-width: 2px 0 0 2px; }
+  .cam-corner.tr { top: 10px; right: 10px; border-width: 2px 2px 0 0; }
+  .cam-corner.bl { bottom: 10px; left: 10px; border-width: 0 0 2px 2px; }
+  .cam-corner.br { bottom: 10px; right: 10px; border-width: 0 2px 2px 0; }
+  .cam-scan { position: absolute; left: 5%; right: 5%; height: 2px; background: linear-gradient(90deg, transparent, var(--green), transparent); box-shadow: 0 0 8px var(--green); animation: camScan 2.5s ease-in-out infinite; border-radius: 1px; }
+  @keyframes camScan { 0% { top: 10%; opacity: 1; } 90% { top: 90%; opacity: 1; } 100% { top: 10%; opacity: 0; } }
+  .face-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 110px; height: 140px; border: 1.5px dashed rgba(255,255,255,.5); border-radius: 50%; box-shadow: 0 0 0 9999px rgba(0,0,0,.3); }
+  #snapCanvas { display: none; }
+  #capturedWrap { display: none; position: relative; border-radius: 12px; overflow: hidden; aspect-ratio: 4/3; background: #f0fdf4; width: 100%; }
+  #capturedWrap.show { display: block; }
+  #capturedImg { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+  .captured-badge { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .7rem; border-radius: 50px; background: rgba(255,255,255,.95); backdrop-filter: blur(4px); font-size: .7rem; font-weight: 600; color: var(--green-dark); border: 1px solid rgba(26,158,63,.2); white-space: nowrap; }
+
+  .camera-controls { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .8rem; }
+  .btn-cam { flex: 1; padding: .55rem .8rem; border-radius: 10px; font-family: 'Syne', sans-serif; font-size: .8rem; font-weight: 700; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: .3rem; transition: transform .2s, box-shadow .2s, opacity .2s; }
+  .btn-cam:hover:not(:disabled) { transform: translateY(-1px); }
+  .btn-cam:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-cam.start { background: var(--grad); color: #fff; box-shadow: 0 2px 8px rgba(26,158,63,.25); }
+  .btn-cam.capture { background: #fff; color: var(--green-dark); border: 1px solid var(--border); box-shadow: 0 1px 4px rgba(0,0,0,.03); }
+  .btn-cam.capture:hover:not(:disabled) { background: var(--green-light); border-color: var(--green); }
+  .btn-cam.retake { background: #fff; color: #ef4444; border: 1px solid rgba(239,68,68,.3); flex: none; padding: .55rem .8rem; }
+  .btn-cam.retake:hover:not(:disabled) { background: #fff5f5; }
+
+  .verify-section { margin-top: .5rem; }
+  .btn-verify-main { width: 100%; padding: .9rem; border-radius: 12px; background: var(--grad); border: none; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: 700; font-size: .95rem; color: #fff; letter-spacing: .02em; text-transform: uppercase; box-shadow: 0 4px 16px rgba(26,158,63,.3); transition: box-shadow .2s, transform .2s, opacity .2s; display: flex; align-items: center; justify-content: center; gap: .5rem; }
+  .btn-verify-main:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(26,158,63,.4); transform: translateY(-1px); }
+  .btn-verify-main:disabled { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
+  
+  .privacy-notice { margin-top: .8rem; padding: .75rem 1rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: flex-start; gap: .6rem; font-size: .75rem; color: var(--muted); line-height: 1.5; }
+  .privacy-notice .pi { font-size: 1rem; flex-shrink: 0; }
+
+  .results-wrap { margin-top: 1rem; display: none; }
+  .results-wrap.show { display: block; animation: fadeUp .5s both; }
+  .result-loading { display: none; text-align: center; padding: 2rem 0; }
+  .spinner { width: 36px; height: 36px; border-radius: 50%; border: 3px solid var(--green-mid); border-top-color: var(--green); animation: spinA .8s linear infinite; margin: 0 auto .8rem; }
+  @keyframes spinA { to { transform: rotate(360deg); } }
+  .result-loading p { font-size: .8rem; color: var(--muted); font-weight: 500; }
+  
+  .result-data { display: none; }
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; margin-bottom: 1rem; }
+  .metric-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; transition: box-shadow .2s; }
+  .metric-name { font-size: .7rem; color: var(--muted); font-weight: 600; margin-bottom: .4rem; text-transform: uppercase; letter-spacing: .03em; }
+  .metric-score { font-family: 'DM Sans', sans-serif; font-size: 1.4rem; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  #ocrVal { font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 600; line-height: 1.4; color: var(--text); background: none; -webkit-text-fill-color: initial; word-wrap: break-word; }
+  .metric-bar { height: 5px; background: var(--green-mid); border-radius: 3px; margin-top: .5rem; overflow: hidden; }
+  .metric-fill { height: 100%; border-radius: 3px; transition: width 1s cubic-bezier(.16,1,.3,1); }
+  .fill-green { background: var(--grad); }
+  .fill-warn  { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+  .fill-cyan  { background: linear-gradient(90deg, #059669, #10b981); }
+
+  .decision-card { background: var(--surface2); border: 1.5px solid var(--border); border-radius: 12px; padding: 1rem 1.2rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .badge { display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .9rem; border-radius: 50px; font-family: 'Syne', sans-serif; font-size: .8rem; font-weight: 700; }
+  .badge.verified { background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.3); color: #047857; }
+  .badge.flagged  { background: rgba(245,158,11,.1);  border: 1px solid rgba(245,158,11,.3); color: #b45309; }
+  .badge.rejected { background: rgba(239,68,68,.1);   border: 1px solid rgba(239,68,68,.3);  color: #b91c1c; }
+  .decision-icon { font-size: 1.8rem; }
+
+  .btn-reset { width: 100%; margin-top: .8rem; padding: .65rem; border-radius: 10px; background: transparent; border: 1px solid var(--border); font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: .82rem; color: var(--muted); cursor: pointer; transition: all .2s; display: flex; align-items: center; justify-content: center; gap: .4rem; }
+  .btn-reset:hover { background: var(--surface2); color: var(--text); border-color: rgba(0,0,0,.15); }
+
+  .sidebar-tip { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.2rem; box-shadow: var(--shadow-sm); margin-bottom: 1.2rem; }
+  .tip-title { font-family: 'Syne', sans-serif; font-size: .88rem; font-weight: 700; color: var(--text); margin-bottom: .6rem; display: flex; align-items: center; gap: .4rem; }
+  .tip-list { list-style: none; }
+  .tip-list li { font-size: .75rem; color: var(--muted); padding: .3rem 0; display: flex; align-items: flex-start; gap: .4rem; border-bottom: 1px solid rgba(0,0,0,.03); }
+  .tip-list li:last-child { border-bottom: none; }
+  .tip-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; }
+
+  @keyframes fadeUp { from { opacity:0; transform: translateY(15px); } to { opacity:1; transform: translateY(0); } }
+  
+  .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(80px); background: #1f2937; color: #fff; padding: .6rem 1.2rem; border-radius: 50px; font-size: .8rem; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,.2); transition: transform .3s cubic-bezier(.16,1,.3,1); z-index: 999; display: flex; align-items: center; gap: .5rem; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error { background: #ef4444; }
+  .toast.success { background: var(--green); }
+
+  @media(max-width: 860px) { .content-cols { grid-template-columns: 1fr; } .main-grid, .result-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">SIP <span>Portal</span></div>
+  <div class="topbar-right">
+    <div class="topbar-badge">Secure Session</div>
+    <a href="index.html" class="btn-back">← Back to Home</a>
+  </div>
+</div>
+
+<div class="page-wrap">
+  <div class="page-header">
+    <h1>Identity <span>Verification</span></h1>
+    <p>Upload your government ID and capture a selfie to verify your identity. All data is processed locally.</p>
+  </div>
+
+  <div class="stepper" id="stepper">
+    <div class="step-item active" id="step1"><div class="step-num">1</div><span>Upload ID</span></div>
+    <div class="step-connector" id="conn1"></div>
+    <div class="step-item" id="step2"><div class="step-num">2</div><span>Capture Selfie</span></div>
+    <div class="step-connector" id="conn2"></div>
+    <div class="step-item" id="step3"><div class="step-num">3</div><span>Verify Data</span></div>
+  </div>
+
+  <div class="content-cols">
+    <div class="left-col">
+      <div class="main-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🪪</div>
+            <div>
+              <div class="card-title">Upload ID Document</div>
+              <div class="card-subtitle">Aadhaar or PAN Card</div>
+            </div>
+          </div>
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('idFileInput').click()">
+            <input type="file" id="idFileInput" accept="image/*,application/pdf" onchange="handleIdUpload(event)">
+            <div class="uz-icon" id="uzIcon">📄</div>
+            <div class="uz-label" id="uzLabel">Drop your ID here</div>
+            <div class="uz-sub" id="uzSub">or <span>browse</span> files</div>
+            <div class="preview-wrap" id="idPreviewWrap">
+              <img id="idPreviewImg" src="" alt="ID Preview">
+              <button class="preview-remove" onclick="removeId(event)" title="Remove">✕</button>
+            </div>
+          </div>
+          <div id="idFileBadge" style="display:none;margin-top:.5rem;text-align:center;">
+            <span class="file-badge">✓ ID uploaded</span>
+          </div>
+          <div style="margin-top:1rem">
+            <label class="form-label" for="docType">Document Type</label>
+            <select class="input-field" id="docType">
+              <option value="">Select document type…</option>
+              <option value="aadhaar">Aadhaar Card</option>
+              <option value="pan">PAN Card</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🤳</div>
+            <div>
+              <div class="card-title">Live Selfie Capture</div>
+              <div class="card-subtitle">Camera required — no file upload</div>
+            </div>
+          </div>
+          <div id="cameraWrap" class="camera-wrap">
+            <div class="camera-placeholder" id="camPlaceholder">
+              <div class="cam-icon">📷</div>
+              <p>Click <strong>Start Camera</strong> below to<br>enable your webcam</p>
+            </div>
+            <video id="cameraVideo" autoplay playsinline muted></video>
+            <canvas id="snapCanvas"></canvas>
+            <div class="camera-overlay" id="camOverlay">
+              <div class="cam-corner tl"></div><div class="cam-corner tr"></div>
+              <div class="cam-corner bl"></div><div class="cam-corner br"></div>
+              <div class="cam-scan"></div><div class="face-guide"></div>
+            </div>
+          </div>
+          <div id="capturedWrap">
+            <img id="capturedImg" src="" alt="Captured selfie">
+            <div class="captured-badge">✓ Selfie captured</div>
+          </div>
+          <div class="camera-controls">
+            <button class="btn-cam start" id="btnStartCam" onclick="startCamera()">📷 Start Camera</button>
+            <button class="btn-cam capture" id="btnCapture" onclick="captureSnapshot()" disabled>⚡ Capture</button>
+            <button class="btn-cam retake" id="btnRetake" onclick="retakeSelfie()" style="display:none" title="Retake">↺</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="verify-section">
+        <button class="btn-verify-main" id="btnVerify" onclick="runVerification()">
+          Verify Identity
+        </button>
+      </div>
+
+      <div class="privacy-notice">
+        <span class="pi">🔒</span>
+        <span><strong>Data Privacy:</strong> Documents and selfies are processed entirely via secure local API. No images are persistently stored on the server.</span>
+      </div>
+
+      <div class="results-wrap card" id="resultsWrap">
+        <div class="card-header" style="margin-bottom:1rem">
+          <div class="card-icon">📊</div>
+          <div>
+            <div class="card-title">Verification Results</div>
+            <div class="card-subtitle">AI analysis output</div>
+          </div>
+        </div>
+
+        <div class="result-loading" id="resultLoading">
+          <div class="spinner"></div>
+          <p id="loadingMsg">Sending to secure backend…</p>
+        </div>
+
+        <div class="result-data" id="resultData">
+          <div class="result-grid">
+            <div class="metric-card">
+              <div class="metric-name">Face Match Score</div>
+              <div class="metric-score" id="faceVal">—</div>
+              <div class="metric-bar"><div class="metric-fill fill-green" id="faceBar" style="width:0"></div></div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-name">Tampering Probability</div>
+              <div class="metric-score" id="tampVal">—</div>
+              <div class="metric-bar"><div class="metric-fill fill-warn" id="tampBar" style="width:0"></div></div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-name">Duplicate Risk</div>
+              <div class="metric-score" id="dupVal">—</div>
+              <div class="metric-bar"><div class="metric-fill fill-cyan" id="dupBar" style="width:0"></div></div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-name">Data Extracted</div>
+              <div id="ocrVal">—</div>
+            </div>
+          </div>
+          <div class="decision-card" id="decisionCard">
+            <div>
+              <div style="font-size:.7rem;color:var(--muted);margin-bottom:.2rem;font-weight:600;text-transform:uppercase;">Final Decision</div>
+              <div id="decisionBadge"></div>
+              <div id="decisionDetail" style="font-size:.75rem;color:var(--muted);margin-top:.4rem"></div>
+            </div>
+            <div class="decision-icon" id="decisionIcon"></div>
+          </div>
+          <button class="btn-reset" onclick="resetAll()">↺ Start New Verification</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="sidebar-tip">
+        <div class="tip-title">📋 Document Tips</div>
+        <ul class="tip-list">
+          <li>Ensure the document is flat and fully visible</li>
+          <li>Avoid shadows or glare on the card</li>
+          <li>All four corners must be in frame</li>
+          <li>Text should be crisp and readable</li>
+          <li>Remove any plastic covers or lamination glare</li>
+        </ul>
+      </div>
+
+      <div class="sidebar-tip" style="margin-top:1rem">
+        <div class="tip-title">🤳 Selfie Tips</div>
+        <ul class="tip-list">
+          <li>Face the camera directly in good light</li>
+          <li>Remove glasses or hats if possible</li>
+          <li>Align your face within the oval guide</li>
+          <li>Keep a neutral expression</li>
+          <li>Ensure background is plain and well-lit</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-top:1rem; padding: 1.3rem;">
+        <div class="card-title" style="font-size:.88rem;margin-bottom:.8rem">✅ Supported Documents</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+          <div style="padding:.5rem .7rem;background:var(--surface2);border-radius:10px;font-size:.75rem;font-weight:600;color:var(--green-dark);border:1px solid rgba(26,158,63,.12)">🟢 Aadhaar</div>
+          <div style="padding:.5rem .7rem;background:var(--surface2);border-radius:10px;font-size:.75rem;font-weight:600;color:var(--green-dark);border:1px solid rgba(26,158,63,.12)">🟢 PAN Card</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let mediaStream = null;
+let capturedBlob = null;
+let idFileData = null;
+let cameraActive = false;
+
+function setStep(n) {
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById('step' + i);
+    el.classList.remove('active', 'done');
+    if (i < n) el.classList.add('done');
+    else if (i === n) el.classList.add('active');
+  }
+  for (let i = 1; i <= 2; i++) {
+    const c = document.getElementById('conn' + i);
+    c.classList.toggle('done', i < n);
+  }
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + type; void t.offsetWidth;
+  t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+function handleIdUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const zone = document.getElementById('uploadZone');
+  zone.classList.add('has-file');
+  idFileData = file;
+  document.getElementById('uzIcon').style.display = 'none';
+  document.getElementById('uzLabel').style.display = 'none';
+  document.getElementById('uzSub').style.display = 'none';
+  document.getElementById('idFileBadge').style.display = 'block';
+
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById('idPreviewImg').src = ev.target.result;
+      document.getElementById('idPreviewWrap').classList.add('show');
+    };
+    reader.readAsDataURL(file);
+  } else { document.getElementById('idPreviewWrap').classList.remove('show'); }
+  setStep(2); showToast('✓ Document uploaded', 'success');
+}
+
+function removeId(e) {
+  e.stopPropagation(); idFileData = null;
+  document.getElementById('idFileInput').value = '';
+  document.getElementById('idPreviewImg').src = '';
+  document.getElementById('idPreviewWrap').classList.remove('show');
+  document.getElementById('uploadZone').classList.remove('has-file');
+  document.getElementById('uzIcon').style.display = '';
+  document.getElementById('uzLabel').style.display = '';
+  document.getElementById('uzSub').style.display = '';
+  document.getElementById('idFileBadge').style.display = 'none';
+  setStep(1);
+}
+
+async function startCamera() {
+  const btn = document.getElementById('btnStartCam');
+  btn.disabled = true; btn.textContent = 'Starting…';
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    const video = document.getElementById('cameraVideo');
+    video.srcObject = mediaStream; video.style.display = 'block';
+    document.getElementById('camPlaceholder').style.display = 'none';
+    document.getElementById('camOverlay').classList.add('active');
+    btn.textContent = 'Camera Active'; btn.disabled = true;
+    document.getElementById('btnCapture').disabled = false; cameraActive = true;
+  } catch (err) {
+    btn.disabled = false; btn.textContent = '📷 Start Camera';
+    showToast('⚠ Could not access camera', 'error');
+  }
+}
+
+function captureSnapshot() {
+  const video = document.getElementById('cameraVideo');
+  const canvas = document.getElementById('snapCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width  = video.videoWidth  || 640; canvas.height = video.videoHeight || 480;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  canvas.toBlob(blob => {
+    capturedBlob = blob;
+    document.getElementById('capturedImg').src = URL.createObjectURL(blob);
+    document.getElementById('capturedWrap').classList.add('show');
+    document.getElementById('cameraWrap').style.display = 'none';
+    document.getElementById('btnCapture').style.display = 'none';
+    document.getElementById('btnStartCam').style.display = 'none';
+    document.getElementById('btnRetake').style.display = 'flex';
+    stopCamera(); showToast('✓ Selfie captured', 'success');
+  }, 'image/jpeg', 0.92);
+}
+
+function stopCamera() {
+  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+  cameraActive = false;
+}
+
+function retakeSelfie() {
+  capturedBlob = null;
+  document.getElementById('capturedImg').src = '';
+  document.getElementById('capturedWrap').classList.remove('show');
+  document.getElementById('cameraWrap').style.display = '';
+  document.getElementById('btnCapture').style.display = '';
+  document.getElementById('btnStartCam').style.display = '';
+  document.getElementById('btnRetake').style.display = 'none';
+  document.getElementById('btnStartCam').disabled = false;
+  document.getElementById('btnStartCam').textContent = '📷 Start Camera';
+  document.getElementById('btnCapture').disabled = true;
+  document.getElementById('cameraVideo').style.display = 'none';
+  document.getElementById('camPlaceholder').style.display = '';
+  document.getElementById('camOverlay').classList.remove('active');
+}
+
+const loadingMsgs = ['Uploading files...', 'Analyzing face biometrics...', 'Extracting OCR data...', 'Running fraud detection...'];
+async function runVerification() {
+  if (!idFileData) { showToast('⚠ Please upload an ID', 'error'); return; }
+  if (!capturedBlob) { showToast('⚠ Please capture a selfie', 'error'); return; }
+  const docType = document.getElementById('docType').value;
+  if (!docType) { showToast('⚠ Please select doc type', 'error'); return; }
+
+  const btn = document.getElementById('btnVerify');
+  btn.disabled = true;
+  document.getElementById('resultsWrap').classList.add('show');
+  document.getElementById('resultData').style.display = 'none';
+  document.getElementById('resultLoading').style.display = 'block';
+  document.getElementById('resultsWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  setStep(3);
+
+  let mIdx = 0; const msgInt = setInterval(() => { document.getElementById('loadingMsg').textContent = loadingMsgs[++mIdx % loadingMsgs.length]; }, 800);
+
+  const formData = new FormData();
+  formData.append('id_document', idFileData); 
+  formData.append('selfie', capturedBlob, 'selfie.jpg'); 
+  formData.append('doc_type', docType);
+
+  try {
+    const response = await fetch('/api/verify', { method: 'POST', body: formData });
+    const result = await response.json();
+    clearInterval(msgInt);
+    
+    // Check if the backend returned our document mismatch error!
+    if (!response.ok) {
+       throw new Error(result.error || "Verification failed");
+    }
+
+    document.getElementById('resultLoading').style.display = 'none';
+    document.getElementById('resultData').style.display = 'block';
+
+    const faceDist = result.face_score !== undefined ? result.face_score : 1.0;
+    const facePct = Math.max(0, (1 - faceDist) * 100); 
+    const tampPct = result.tampering_score * 100;
+    const dupPct = result.duplicate_detected ? 100 : 0;
+
+    setBar('faceBar', 'faceVal', facePct, '%');
+    setBar('tampBar', 'tampVal', tampPct, '%');
+    setBar('dupBar',  'dupVal',  dupPct, '%');
+
+    let text = result.name ? result.name : "<span style='color:var(--muted);font-weight:400'>Name not extracted</span>";
+    if (result.pan_number) text += `<br/><span style='font-size:.75rem;color:var(--muted)'>PAN:</span> ${result.pan_number}`;
+    if (result.aadhaar_number) text += `<br/><span style='font-size:.75rem;color:var(--muted)'>Aadhaar:</span> ${result.aadhaar_number}`;
+    document.getElementById('ocrVal').innerHTML = text;
+
+    let bCls, icon;
+    if (result.verification_status === "VERIFIED") { bCls = 'verified'; icon = '✅'; } 
+    else if (result.verification_status === "FLAGGED") { bCls = 'flagged'; icon = '⚠️'; } 
+    else { bCls = 'rejected'; icon = '❌'; }
+
+    document.getElementById('decisionBadge').innerHTML = `<div class="badge ${bCls}">${icon} ${result.verification_status}</div>`;
+    document.getElementById('decisionDetail').textContent = `System Authenticity Score: ${(result.risk_score * 100).toFixed(1)}%`;
+    document.getElementById('decisionIcon').textContent = icon;
+    btn.disabled = false; showToast('✓ Complete', 'success');
+
+  } catch(error) {
+    clearInterval(msgInt);
+    document.getElementById('resultLoading').style.display = 'none';
+    document.getElementById('resultsWrap').classList.remove('show');
+    btn.disabled = false; setStep(2); 
+    
+    // THIS is where the Logical Mismatch error appears!
+    showToast(error.message, 'error');
+  }
+}
+
+function setBar(bId, vId, pct, unit) {
+  document.getElementById(bId).style.width = pct.toFixed(1) + '%';
+  document.getElementById(vId).textContent = pct.toFixed(1) + unit;
+}
+
+function resetAll() {
+  if (idFileData) removeId({ stopPropagation: () => {} });
+  stopCamera(); capturedBlob = null;
+  document.getElementById('capturedImg').src = ''; document.getElementById('capturedWrap').classList.remove('show');
+  document.getElementById('cameraWrap').style.display = ''; document.getElementById('btnCapture').style.display = '';
+  document.getElementById('btnStartCam').style.display = ''; document.getElementById('btnRetake').style.display = 'none';
+  document.getElementById('btnStartCam').disabled = false; document.getElementById('btnStartCam').textContent = '📷 Start Camera';
+  document.getElementById('btnCapture').disabled = true; document.getElementById('cameraVideo').style.display = 'none';
+  document.getElementById('camPlaceholder').style.display = ''; document.getElementById('camOverlay').classList.remove('active');
+  document.getElementById('docType').value = '';
+  document.getElementById('resultsWrap').classList.remove('show');
+  document.getElementById('resultData').style.display = 'none';
+  setStep(1); window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.addEventListener('beforeunload', stopCamera);
+
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = 'var(--green)'; });
+uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = ''; });
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.style.borderColor = '';
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    document.getElementById('idFileInput').files = files;
+    handleIdUpload({ target: document.getElementById('idFileInput') });
+  }
+});
+</script>
+</body>
+</html>
